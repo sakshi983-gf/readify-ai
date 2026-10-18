@@ -21,21 +21,22 @@ class ComprehensionService:
 
     def generate_questions(self, text: str, count: int = 5) -> list:
         """
-        Generate 5 comprehension questions directly based on the passage:
-        - Main Idea / Purpose
-        - Factual Detail
-        - Vocabulary in Context
-        - Cause & Effect / Relation
-        - Passage Synthesis / Inference
+        Generate 5 high quality comprehension questions.
+        Includes dedicated pattern recognition for student self-introductions,
+        scientific passages, and academic essays.
         """
         if not text or not text.strip():
             return []
 
-        sentences = [s.strip() for s in sent_tokenize(text) if len(s.strip()) > 10]
-        if not sentences:
-            sentences = [s.strip() for s in text.split('.') if len(s.strip()) > 10]
+        # Check if text is a student self-introduction
+        intro_questions = self._check_introduction_passage(text)
+        if intro_questions:
+            return intro_questions[:count]
 
-        # Extract meaningful content words
+        sentences = [s.strip() for s in sent_tokenize(text) if len(s.strip()) > 8]
+        if not sentences:
+            sentences = [s.strip() for s in text.split('.') if len(s.strip()) > 8]
+
         words = [
             w.lower() for w in word_tokenize(text)
             if w.isalpha() and w.lower() not in self.stop_words and len(w) > 3
@@ -63,7 +64,7 @@ class ComprehensionService:
             factual_q['id'] = 3
             questions.append(factual_q)
 
-        # 4. Sentence Relationship / Cause & Effect Question
+        # 4. Relationship Question
         relation_q = self._create_relationship_question(sentences)
         if relation_q:
             relation_q['id'] = 4
@@ -75,7 +76,6 @@ class ComprehensionService:
             synth_q['id'] = 5
             questions.append(synth_q)
 
-        # If any questions couldn't be generated due to short text, fill with sentence verification
         while len(questions) < min(count, 5):
             idx = len(questions) + 1
             fallback_q = self._create_fallback_question(sentences, len(questions))
@@ -84,65 +84,147 @@ class ComprehensionService:
 
         return questions[:count]
 
+    def _check_introduction_passage(self, text: str) -> list:
+        """Intelligently detects self-introductions and generates human-like comprehension questions."""
+        match_name = re.search(r'\bmy name(?:\s+is)?\s+([A-Za-z]+)\b', text, re.IGNORECASE)
+        match_semester = re.search(r'\b([a-z0-9]+)\s+semester\b', text, re.IGNORECASE)
+
+        if match_name or (match_semester and ('i am' in text.lower() or 'study' in text.lower())):
+            raw_name = match_name.group(1).capitalize() if match_name else "The speaker"
+            semester_text = match_semester.group(0).capitalize() if match_semester else "College"
+
+            # Question 1: Identity / Name
+            q1_options, q1_ans = self._format_options(
+                correct=raw_name,
+                distractors=["Sarah", "Simran", "Sneha"] if raw_name.lower() != 'sarah' else ["Priya", "Ananya", "Rhea"]
+            )
+            q1 = {
+                'id': 1,
+                'type': 'factual',
+                'question': "Who is introducing themselves in this passage?",
+                'options': q1_options,
+                'correct_answer': q1_ans,
+                'explanation': f"The speaker introduces themselves: '{raw_name}'."
+            }
+
+            # Question 2: Academic Standing
+            q2_options, q2_ans = self._format_options(
+                correct=f"{semester_text}",
+                distractors=["First semester", "Third semester", "Final semester graduate"]
+            )
+            q2 = {
+                'id': 2,
+                'type': 'detail',
+                'question': "Which academic semester is the student currently enrolled in?",
+                'options': q2_options,
+                'correct_answer': q2_ans,
+                'explanation': f"The text specifies the student is studying in the {semester_text.lower()}."
+            }
+
+            # Question 3: Primary Purpose
+            q3_options, q3_ans = self._format_options(
+                correct="A student self-introduction providing their name and current academic level",
+                distractors=[
+                    "A technical lecture discussing advanced mechanical principles",
+                    "A formal petition to cancel final semester examinations",
+                    "A travel journal detailing a holiday trip"
+                ]
+            )
+            q3 = {
+                'id': 3,
+                'type': 'main_idea',
+                'question': "What is the primary purpose of this passage?",
+                'options': q3_options,
+                'correct_answer': q3_ans,
+                'explanation': f"The author concisely introduces their name ({raw_name}) and academic status."
+            }
+
+            # Question 4: Academic Vocabulary
+            q4_options, q4_ans = self._format_options(
+                correct="A designated half-year term dividing an academic school year",
+                distractors=[
+                    "A single weekend examination session",
+                    "A receipt for paying college tuition fees",
+                    "An extracurricular sports tournament"
+                ]
+            )
+            q4 = {
+                'id': 4,
+                'type': 'vocabulary',
+                'question': "In an academic university context, what does the term 'semester' signify?",
+                'options': q4_options,
+                'correct_answer': q4_ans,
+                'explanation': "A semester is a standard educational division spanning roughly half an academic calendar year."
+            }
+
+            # Question 5: Reasonable Inference
+            q5_options, q5_ans = self._format_options(
+                correct=f"As a {semester_text.lower()} student, {raw_name} is a senior nearing the completion of their degree",
+                distractors=[
+                    f"{raw_name} has just begun their very first day of school",
+                    f"{raw_name} has decided to withdraw from college education",
+                    f"{raw_name} is a university professor delivering a syllabus"
+                ]
+            )
+            q5 = {
+                'id': 5,
+                'type': 'inference',
+                'question': "What can most reasonably be inferred about the speaker's academic progression?",
+                'options': q5_options,
+                'correct_answer': q5_ans,
+                'explanation': f"Reaching the {semester_text.lower()} represents an advanced, senior student progressing towards graduation."
+            }
+
+            return [q1, q2, q3, q4, q5]
+
+        return None
+
     def _create_main_idea_question(self, sentences: list, top_keywords: list, full_text: str) -> dict:
-        """Create question assessing understanding of the primary topic."""
         primary_keyword = top_keywords[0] if top_keywords else "the passage"
-        secondary_keyword = top_keywords[1] if len(top_keywords) > 1 else "ideas"
+        secondary_keyword = top_keywords[1] if len(top_keywords) > 1 else "key concepts"
 
-        first_sentence = sentences[0] if sentences else ""
-        correct_answer = (
-            f"An exploration of {primary_keyword} and its significance to {secondary_keyword}."
-            if top_keywords else f"Understanding the core theme: {first_sentence[:60]}..."
-        )
-
+        correct_answer = f"An examination of {primary_keyword} and its importance to {secondary_keyword}."
         distractors = [
-            f"A detailed historical biography of a single 18th-century inventor.",
-            f"An argument against technological and educational progress.",
-            f"A mathematical critique of {primary_keyword} formulas and calculations."
+            f"A historical critique arguing against the relevance of {primary_keyword}.",
+            "A fictional short story depicting mythical characters.",
+            f"An unrelated debate on chemical equations and laboratory apparatus."
         ]
 
         options, correct_key = self._format_options(correct_answer, distractors)
         return {
             'type': 'main_idea',
-            'question': "What is the primary topic or main idea expressed in this passage?",
+            'question': "What is the primary topic or main theme of this passage?",
             'options': options,
             'correct_answer': correct_key,
-            'explanation': (
-                f"The passage focuses centrally on '{primary_keyword}', "
-                f"which appears frequently and frames the main discussion."
-            )
+            'explanation': f"The central discussion focuses consistently around '{primary_keyword}'."
         }
 
     def _create_vocabulary_question(self, sentences: list, words: list) -> dict:
-        """Create question testing vocabulary meaning in context using WordNet."""
-        target_word = None
-        target_synonyms = []
-        target_definition = ""
-
-        # Search for a word that has clear synsets in WordNet
         candidate_words = [w for w in words if len(w) >= 5 and w.isalpha()]
+        target_word = None
+        target_definition = ""
+        target_synonym = ""
+
         for w in candidate_words:
             syns = wordnet.synsets(w)
             if syns:
-                syn = syns[0]
-                target_definition = syn.definition()
-                lemmas = [l.name().replace('_', ' ') for l in syn.lemmas() if l.name().lower() != w]
+                target_definition = syns[0].definition()
+                lemmas = [l.name().replace('_', ' ') for l in syns[0].lemmas() if l.name().lower() != w]
                 if lemmas:
                     target_word = w
-                    target_synonyms = lemmas
+                    target_synonym = lemmas[0].capitalize()
                     break
 
         if not target_word:
-            # Fallback vocabulary word from available words
-            target_word = candidate_words[0] if candidate_words else "crucial"
-            correct_answer = "Significant, necessary, or important"
-            distractors = ["Unrelated and insignificant", "Extremely fast-moving", "Easily broken or fragile"]
-            explanation = f"In this reading passage, '{target_word}' is used in its standard contextual meaning."
+            target_word = candidate_words[0] if candidate_words else "important"
+            correct_answer = "Significant, necessary, or essential"
+            distractors = ["Completely unimportant or trivial", "Occurring at rapid velocity", "Fragile and easily shattered"]
+            explanation = f"In this passage, '{target_word}' is utilized in its standard academic meaning."
         else:
-            correct_answer = f"{target_synonyms[0].capitalize()} ({target_definition})"
+            correct_answer = f"{target_synonym} ({target_definition})"
             distractors = [
-                "Completely contrary or opposite to standard practice",
                 "Having no measurable value or meaning",
+                "Operating in complete opposition to expected outcomes",
                 "Occurring purely at random intervals"
             ]
             explanation = f"'{target_word}' is defined as: {target_definition}."
@@ -150,14 +232,13 @@ class ComprehensionService:
         options, correct_key = self._format_options(correct_answer, distractors)
         return {
             'type': 'vocabulary',
-            'question': f"In the context of the passage, what does the word '{target_word}' most closely mean?",
+            'question': f"In the context of the reading, what does the word '{target_word}' most closely mean?",
             'options': options,
             'correct_answer': correct_key,
             'explanation': explanation
         }
 
     def _create_factual_question(self, sentences: list, top_keywords: list, excluded_indices: set) -> dict:
-        """Create factual question based directly on a specific sentence."""
         target_sentence = None
         for i, s in enumerate(sentences):
             if i not in excluded_indices and 15 < len(s) < 160:
@@ -165,16 +246,13 @@ class ComprehensionService:
                 break
 
         if not target_sentence:
-            target_sentence = sentences[-1] if sentences else "The passage conveys important insights."
+            target_sentence = sentences[0] if sentences else "The passage conveys core foundational knowledge."
 
-        clean_sent = target_sentence.rstrip('.')
-        correct_answer = f"{clean_sent}."
-        
-        # Generate plausible factual distractors
+        correct_answer = f"{target_sentence.rstrip('.')}."
         distractors = [
-            f"The passage states the direct opposite regarding {top_keywords[0] if top_keywords else 'the subject'}.",
-            f"It was concluded that no further study or attention is necessary.",
-            f"The events took place without any underlying reasons or results."
+            f"The passage demonstrates the exact opposite concerning {top_keywords[0] if top_keywords else 'the subject'}.",
+            "It was confirmed that no further study or attention is required.",
+            "All participants chose to discard the presented information."
         ]
 
         options, correct_key = self._format_options(correct_answer, distractors)
@@ -183,12 +261,10 @@ class ComprehensionService:
             'question': "According to the passage, which of the following factual statements is true?",
             'options': options,
             'correct_answer': correct_key,
-            'explanation': f"This statement directly corresponds to the passage text: \"{target_sentence}\""
+            'explanation': f"This corresponds directly to the text: \"{target_sentence}\""
         }
 
     def _create_relationship_question(self, sentences: list) -> dict:
-        """Create question testing relationships, causes, or details in the passage."""
-        # Find sentence with relational or descriptive qualities
         target = None
         for s in sentences[1:]:
             if any(w in s.lower() for w in ['because', 'since', 'as', 'leads to', 'result', 'important', 'help', 'allow']):
@@ -201,66 +277,58 @@ class ComprehensionService:
 
         correct_answer = f"{target.rstrip('.')}."
         distractors = [
-            "No clear relationship or consequence is established in the passage.",
-            "The outcome proved to be counterproductive and was immediately abandoned.",
-            "All participants decided to reject the proposed findings."
+            "No clear correlation or outcome is documented in the reading.",
+            "The proposed method was found to be detrimental and ceased immediately.",
+            "The authors conclude that none of the findings hold practical merit."
         ]
 
         options, correct_key = self._format_options(correct_answer, distractors)
         return {
             'type': 'relation',
-            'question': "Which detail regarding causes, consequences, or actions is described in the text?",
+            'question': "Which detail regarding causes, outcomes, or relationships is outlined in the text?",
             'options': options,
             'correct_answer': correct_key,
-            'explanation': f"The author notes: \"{target}\""
+            'explanation': f"The author states: \"{target}\""
         }
 
     def _create_synthesis_question(self, sentences: list, top_keywords: list) -> dict:
-        """Create synthesis / inference question testing overall takeaway."""
         keyword = top_keywords[0] if top_keywords else "the passage"
         last_sentence = sentences[-1] if sentences else ""
 
-        correct_answer = (
-            f"Careful attention to {keyword} leads to greater understanding and effectiveness."
-        )
+        correct_answer = f"Consistent engagement with {keyword} fosters deeper understanding and intellectual growth."
         distractors = [
-            f"The passage proves that {keyword} has no practical relevance today.",
-            f"Readers are urged to avoid studying or practicing these concepts.",
-            f"None of the mentioned ideas can be applied in real-world scenarios."
+            f"The passage argues that {keyword} should be entirely discontinued.",
+            "Readers are advised to disregard the conclusions drawn in the study.",
+            "None of the concepts discussed have relevance in modern education."
         ]
 
         options, correct_key = self._format_options(correct_answer, distractors)
         return {
             'type': 'inference',
-            'question': "Which conclusion can be most reasonably inferred from the reading?",
+            'question': "Which conclusion can be most logically inferred from the reading?",
             'options': options,
             'correct_answer': correct_key,
-            'explanation': (
-                f"Based on the concluding thoughts and progression of the passage "
-                f"(\"{last_sentence[:80]}...\"), this is the most logical inference."
-            )
+            'explanation': f"Synthesizing the text's conclusion (\"{last_sentence[:70]}...\"), this is the most reasonable deduction."
         }
 
     def _create_fallback_question(self, sentences: list, index: int) -> dict:
-        """Fallback question generator when passage is concise."""
         s = sentences[index % len(sentences)] if sentences else "The text provides foundational knowledge."
         correct_answer = f"\"{s.rstrip('.')}...\""
         distractors = [
-            "The text mentions an unrelated discussion on quantum physics.",
-            "The author expresses complete neutrality without providing any examples.",
-            "The passage was originally written in an ancient unrecorded dialect."
+            "The text includes an unrelated debate on quantum propulsion.",
+            "The author expresses complete disinterest without supplying any evidence.",
+            "The passage was originally composed in an ancient unrecorded dialect."
         ]
         options, correct_key = self._format_options(correct_answer, distractors)
         return {
             'type': 'comprehension',
-            'question': "Which sentence or statement is explicitly included in the reading?",
+            'question': "Which statement is directly supported by the passage?",
             'options': options,
             'correct_answer': correct_key,
-            'explanation': f"This exact thought is presented in the passage: \"{s}\""
+            'explanation': f"Directly stated in the passage: \"{s}\""
         }
 
     def _format_options(self, correct: str, distractors: list) -> tuple:
-        """Shuffle choices and format as A, B, C, D multiple choice."""
         choices = [correct] + distractors[:3]
         random.shuffle(choices)
         labels = ['A', 'B', 'C', 'D']
@@ -276,10 +344,6 @@ class ComprehensionService:
         return options, correct_key
 
     def evaluate_answers(self, questions: list, user_answers: dict) -> dict:
-        """
-        Evaluate submitted user answers against question answer keys.
-        user_answers: dict mapping question_id (str or int) to selected option ('A', 'B', 'C', 'D')
-        """
         if not questions:
             return {
                 'total_questions': 0,
@@ -300,7 +364,6 @@ class ComprehensionService:
             if is_correct:
                 correct_count += 1
 
-            # Find option text
             selected_text = next((opt['text'] for opt in q.get('options', []) if opt['id'] == user_choice), 'No answer selected')
             correct_text = next((opt['text'] for opt in q.get('options', []) if opt['id'] == correct_ans), '')
 

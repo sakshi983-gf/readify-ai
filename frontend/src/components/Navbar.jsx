@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, Sparkles, LayoutDashboard, PenTool, History, Menu, X, ArrowRight } from 'lucide-react';
 
-export default function Navbar({ activePage, setActivePage }) {
+export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -137,7 +137,29 @@ export default function Navbar({ activePage, setActivePage }) {
         </nav>
 
         {/* Right CTA */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => onOpenAIConfig && onOpenAIConfig()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'var(--surface-secondary)',
+              border: '1px solid var(--border-subtle)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              color: 'var(--text-secondary)',
+              transition: 'all 0.15s ease',
+            }}
+            title="Configure AI Model Engine"
+            className="ai-engine-btn"
+          >
+            <Sparkles size={14} style={{ color: 'var(--primary)' }} />
+            <span>AI Model</span>
+          </button>
+
           <button
             onClick={() => handleNavClick('workspace')}
             className="btn btn-primary"

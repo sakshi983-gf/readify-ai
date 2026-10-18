@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import AIConfigModal from './components/AIConfigModal';
 import LandingPage from './pages/LandingPage';
 import WorkspacePage from './pages/WorkspacePage';
 import DashboardPage from './pages/DashboardPage';
@@ -11,6 +12,9 @@ export default function App() {
   // Navigation: 'landing' | 'workspace' | 'dashboard' | 'history'
   const [activePage, setActivePage] = useState('landing');
   
+  // AI Config Modal state
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+
   // Workspace state shared between pages
   const [workspacePassage, setWorkspacePassage] = useState('');
   const [workspaceTitle, setWorkspaceTitle] = useState('');
@@ -43,7 +47,6 @@ export default function App() {
         setWorkspacePassage(item.original_text);
         setWorkspaceTitle(item.title);
         
-        // Reconstruct analysis payload format
         const mockAnalysis = {
           id: item.id,
           title: item.title,
@@ -94,7 +97,17 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-main)' }}>
       {/* Universal Sticky Glassmorphism Header */}
-      <Navbar activePage={activePage} setActivePage={setActivePage} />
+      <Navbar 
+        activePage={activePage} 
+        setActivePage={setActivePage} 
+        onOpenAIConfig={() => setIsAIModalOpen(true)}
+      />
+
+      {/* AI Configuration Modal */}
+      <AIConfigModal 
+        isOpen={isAIModalOpen} 
+        onClose={() => setIsAIModalOpen(false)} 
+      />
 
       {/* Main Content Layout */}
       {isLanding ? (
@@ -112,6 +125,7 @@ export default function App() {
             activePage={activePage} 
             setActivePage={setActivePage} 
             onStartNew={handleStartReading}
+            onOpenAIConfig={() => setIsAIModalOpen(true)}
           />
 
           {/* Subpage Viewport */}

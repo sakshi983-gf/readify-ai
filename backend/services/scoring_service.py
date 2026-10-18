@@ -13,22 +13,12 @@ class ScoringService:
             return 0
         if len(word) <= 3:
             return 1
-        # Remove trailing silent 'e', 'es', 'ed'
         word = re.sub(r'(?:[^laeiouy]|ed|es|e)$', '', word)
-        # Count vowel groups
         syllables = len(re.findall(r'[aeiouy]{1,2}', word))
         return max(1, syllables)
 
     @classmethod
     def calculate_readability(cls, text: str) -> dict:
-        """
-        Calculate Flesch Reading Ease and Flesch-Kincaid Grade Level.
-        Formula:
-        - Flesch Reading Ease = 206.835 - (1.015 * ASL) - (84.6 * ASW)
-          where ASL = Average Sentence Length (words / sentences)
-                ASW = Average Syllables per Word (syllables / words)
-        - Flesch-Kincaid Grade Level = (0.39 * ASL) + (11.8 * ASW) - 15.59
-        """
         words = re.findall(r'\b[A-Za-z]+\b', text)
         word_count = len(words)
         if word_count == 0:
@@ -67,7 +57,6 @@ class ScoringService:
         else:
             level_label = 'Very Difficult (College Graduate)'
 
-        # Average reading speed is ~200-250 words per minute
         reading_time_minutes = round(max(0.2, word_count / 200.0), 1)
 
         return {
@@ -80,20 +69,22 @@ class ScoringService:
     @staticmethod
     def calculate_grammar_score(word_count: int, error_count: int) -> dict:
         """
-        Calculate grammar accuracy score (0-100%).
-        Formula:
-        - Error Density (%) = (error_count / total_words) * 100
-        - Penalty = Error Density * 8
-        - Grammar Score = max(0, min(100, round(100 - Penalty)))
+        Fair, academic grammar scoring rubric.
+        Ensures students are not unfairly penalized to 0% for minor mechanical mistakes in short passages.
         """
         if word_count <= 0:
-            return {'score': 100.0, 'density': 0.0, 'formula': '100% (No words entered)'}
+            return {'score': 100.0, 'density': 0.0, 'formula': '100% (No text entered)'}
 
-        density = round((error_count / word_count) * 100, 2)
-        penalty = density * 8.0
-        score = max(0.0, min(100.0, round(100.0 - penalty, 1)))
+        density = round((error_count / word_count) * 100, 1)
 
-        formula = f"max(0, 100 - (({error_count} errors / {word_count} words) * 100 * 8)) = {score}%"
+        if error_count == 0:
+            score = 100.0
+            formula = "100% (Pristine grammar, 0 errors detected)"
+        else:
+            # Scaled penalty formula normalized by length
+            penalty = min(55.0, (error_count * 6.0) / max(0.9, math.log10(word_count + 8)))
+            score = max(45.0, min(95.0, round(100.0 - penalty, 1)))
+            formula = f"100 - ({error_count} errors normalized across {word_count} words) = {score}%"
 
         return {
             'score': score,
@@ -103,14 +94,6 @@ class ScoringService:
 
     @staticmethod
     def calculate_overall_score(grammar_score: float, comprehension_score: float, has_completed_quiz: bool = True) -> dict:
-        """
-        Calculate overall reading performance score.
-        Formula:
-        If quiz completed:
-        - Overall = round(0.60 * Comprehension Score + 0.40 * Grammar Score)
-        If quiz not yet completed:
-        - Overall = round(Grammar Score)
-        """
         if has_completed_quiz:
             score = round((0.60 * comprehension_score) + (0.40 * grammar_score), 1)
             formula = f"0.60 * {comprehension_score}% (Comprehension) + 0.40 * {grammar_score}% (Grammar) = {score}%"
@@ -126,102 +109,62 @@ class ScoringService:
     @classmethod
     def generate_personalized_feedback(cls, comprehension_score: float, grammar_score: float, 
                                        error_counts: dict, word_count: int, 
-                                       quiz_breakdown: list = None) -> list:
-        """
-        Generate contextual, personalized feedback based on measurable metrics:
-        - Actual comprehension quiz results
-        - Specific grammar/spelling error categories
-        - Passage length and depth
-        """
+                                       quiz_breakdown: list = None,
+                                       student_name: str = None) -> list:
         feedback = []
 
-        # 1. Comprehension Assessment Feedback
+        # Name personalized intro
+        greeting = f"Great effort, {student_name}!" if student_name else "Great effort on your reading passage!"
+
         if quiz_breakdown is not None:
-            if comprehension_score >= 90:
+            if comprehension_score >= 80:
                 feedback.append({
                     'type': 'success',
-                    'title': 'Exceptional Comprehension',
-                    'message': 'Outstanding performance! You answered the comprehension questions accurately and demonstrated strong grasp of central ideas and key details.'
+                    'title': 'Outstanding Comprehension',
+                    'message': f"{greeting} You demonstrated strong mastery of the passage details and central theme."
                 })
-            elif comprehension_score >= 70:
+            elif comprehension_score >= 60:
                 feedback.append({
                     'type': 'info',
                     'title': 'Good Reading Understanding',
-                    'message': 'Solid understanding! You captured the main ideas well. Rereading specific supporting sentences can help lock in factual and relational details.'
-                })
-            elif comprehension_score >= 50:
-                feedback.append({
-                    'type': 'warning',
-                    'title': 'Moderate Comprehension',
-                    'message': 'You answered some questions correctly. Try reading the passage at a steadier pace and noting cause-and-effect transitions to boost accuracy.'
+                    'message': 'You grasped the main ideas well. Rereading specific supporting sentences can help lock in factual details.'
                 })
             else:
                 feedback.append({
                     'type': 'warning',
                     'title': 'Needs Practice',
-                    'message': 'Comprehension was challenging on this passage. Try breaking complex sentences into smaller thoughts and re-checking vocabulary in context.'
+                    'message': 'Comprehension was challenging on this passage. Try reading at a steady pace and reviewing unfamiliar vocabulary.'
                 })
 
-            # Check specific question types missed
-            missed_types = [q.get('type') for q in quiz_breakdown if not q.get('is_correct')]
-            if 'vocabulary' in missed_types:
-                feedback.append({
-                    'type': 'tip',
-                    'title': 'Vocabulary Practice Tip',
-                    'message': 'Review contextual clues surrounding unfamiliar words before choosing a synonym.'
-                })
-            if 'main_idea' in missed_types:
-                feedback.append({
-                    'type': 'tip',
-                    'title': 'Main Idea Strategy',
-                    'message': 'Pay special attention to the introductory and concluding sentences where the author summarizes the core message.'
-                })
-
-        # 2. Grammar & Mechanical Feedback
         total_errors = sum(error_counts.values()) if error_counts else 0
-        spelling_errors = error_counts.get('spelling', 0) if error_counts else 0
-        grammar_errors = error_counts.get('grammar', 0) if error_counts else 0
-        punct_errors = error_counts.get('punctuation', 0) if error_counts else 0
-
         if total_errors == 0:
             feedback.append({
                 'type': 'success',
-                'title': 'Pristine Grammar',
-                'message': 'No common grammar or spelling errors were detected. Your passage demonstrates excellent clarity and precision.'
+                'title': 'Flawless Grammar & Mechanics',
+                'message': 'No grammatical or spelling issues detected. Your sentences flow naturally and clearly.'
             })
         else:
-            if spelling_errors > 0:
+            grammar_errs = error_counts.get('grammar', 0)
+            if grammar_errs > 0:
+                feedback.append({
+                    'type': 'tip',
+                    'title': 'Grammar & Linking Verbs',
+                    'message': 'Be sure to include linking verbs (like "is" or "are") and use continuous verb forms (like "studying in") for complete sentences.'
+                })
+
+            spelling_errs = error_counts.get('spelling', 0)
+            if spelling_errs > 0:
                 feedback.append({
                     'type': 'tip',
                     'title': 'Spelling Review',
-                    'message': f'Detected {spelling_errors} potential spelling mistake{"s" if spelling_errors > 1 else ""}. Inspect the highlighted words and suggested replacements.'
-                })
-            if grammar_errors > 0:
-                feedback.append({
-                    'type': 'tip',
-                    'title': 'Grammar & Subject-Verb Agreement',
-                    'message': f'Found {grammar_errors} grammatical improvement{"s" if grammar_errors > 1 else ""}. Check pronoun forms and subject-verb consistency.'
-                })
-            if punct_errors > 0:
-                feedback.append({
-                    'type': 'tip',
-                    'title': 'Punctuation & Spacing',
-                    'message': f'Identified {punct_errors} punctuation/spacing notice{"s" if punct_errors > 1 else ""}. Verify sentence-ending punctuation and clean spacing.'
+                    'message': f'Found {spelling_errs} potential spelling adjustment{"s" if spelling_errs > 1 else ""}. Check the highlighted replacements in the workspace.'
                 })
 
-        # 3. Overall Encouragement / Next Step
-        if grammar_score >= 85 and comprehension_score >= 80:
-            feedback.append({
-                'type': 'celebration',
-                'title': 'Ready for Advanced Passages',
-                'message': 'You are reading and writing with high proficiency. Try testing yourself on longer or more technical texts!'
-            })
-        else:
-            feedback.append({
-                'type': 'action',
-                'title': 'Next Step',
-                'message': 'Review your highlighted corrections in the workspace, copy the polished text, and test another passage to track your score progression.'
-            })
+        feedback.append({
+            'type': 'action',
+            'title': 'Next Step',
+            'message': 'Review your corrected text in the workspace, copy the polished version, and continue practicing to build your fluency!'
+        })
 
         return feedback
 

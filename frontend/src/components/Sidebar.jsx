@@ -11,7 +11,7 @@ import {
   Activity
 } from 'lucide-react';
 
-export default function Sidebar({ activePage, setActivePage, onStartNew }) {
+export default function Sidebar({ activePage, setActivePage, onStartNew, onOpenAIConfig }) {
   const menuItems = [
     { id: 'workspace', label: 'Reading Workspace', icon: PenTool, badge: 'Active' },
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
@@ -124,13 +124,18 @@ export default function Sidebar({ activePage, setActivePage, onStartNew }) {
       </div>
 
       {/* Footer System Status */}
-      <div style={{
-        paddingTop: '16px',
-        borderTop: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+      <div 
+        onClick={() => onOpenAIConfig && onOpenAIConfig()}
+        style={{
+          paddingTop: '16px',
+          borderTop: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+        }}
+        title="Click to view AI Engine settings"
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{
             width: '8px',
@@ -141,11 +146,11 @@ export default function Sidebar({ activePage, setActivePage, onStartNew }) {
             boxShadow: '0 0 6px rgba(16, 185, 129, 0.6)'
           }} />
           <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            Local NLP Engine
+            AI Engine (Smart NLP)
           </span>
         </div>
-        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-          v1.0
+        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 700 }}>
+          Config
         </span>
       </div>
 
