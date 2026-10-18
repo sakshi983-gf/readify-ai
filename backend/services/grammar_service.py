@@ -149,11 +149,74 @@ class GrammarService:
                 if not corrected_sent:
                     corrected_sent = sent_clean
 
+                # Linguistic polish pass to resolve sequence-to-sequence blind spots (possessives, SVA)
+                corrected_sent = self._polish_sentence(corrected_sent)
+
                 corrected_sentences.append(corrected_sent)
 
             corrected_paragraphs.append(" ".join(corrected_sentences))
 
         return "\n".join(corrected_paragraphs)
+
+    def _polish_sentence(self, sentence: str) -> str:
+        """
+        Linguistic polish layer catching possessives, pronoun-verb agreements,
+        and high-frequency ESL patterns that sequence-to-sequence T5 under-corrects.
+        """
+        s = sentence
+
+        # 1. Possessive nouns before name or kinship/possessions: "friend name" -> "friend's name"
+        s = re.sub(
+            r'\b((?:my\s+(?:best\s+)?)?friend|brother|sister|father|mother|cousin|uncle|aunt|teacher|boss|student)\s+(name|car|house|phone|bag|book|family|job|school|college)\b',
+            r"\1's \2",
+            s,
+            flags=re.IGNORECASE
+        )
+        # Proper noun followed by 'name' or kinship (e.g. "Rahul name" -> "Rahul's name")
+        s = re.sub(
+            r'\b([A-Z][a-z]+)\s+(name|father|mother|brother|sister|house|car)\b',
+            lambda m: f"{m.group(1)}'s {m.group(2)}" if m.group(1).lower() not in ['first', 'last', 'full', 'middle', 'sur', 'brand', 'user', 'nick'] else m.group(0),
+            s
+        )
+
+        # 2. Subject-Verb Agreement: Pronoun + 'are'/'is'/'were'/'was'
+        # He/She/It are -> is
+        s = re.sub(r'\b(he|she|it|this|that)\s+are\b', r'\1 is', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(he|she|it|this|that)\s+were\b', r'\1 was', s, flags=re.IGNORECASE)
+        # They/We/You is -> are
+        s = re.sub(r'\b(they|we|you|these|those)\s+is\b', r'\1 are', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(they|we|you|these|those)\s+was\b', r'\1 were', s, flags=re.IGNORECASE)
+        # I is/are -> I am
+        s = re.sub(r'\b(i)\s+(?:is|are)\b', r'\1 am', s, flags=re.IGNORECASE)
+
+        # Has / Have agreement
+        s = re.sub(r'\b(he|she|it)\s+have\b', r'\1 has', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(they|we|you|i)\s+has\b', r'\1 have', s, flags=re.IGNORECASE)
+
+        # Do / Does agreement
+        s = re.sub(r'\b(he|she|it)\s+do\b', r'\1 does', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(they|we|you|i)\s+does\b', r'\1 do', s, flags=re.IGNORECASE)
+
+        # Plural subject with singular verb ending: "we plays" -> "we play", "we studies" -> "we study"
+        s = re.sub(r'\b(we|they|you)\s+studies\b', r'\1 study', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(we|they|you)\s+plays\b', r'\1 play', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(we|they|you)\s+helps\b', r'\1 help', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(we|they|you)\s+goes\b', r'\1 go', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(we|they|you)\s+works\b', r'\1 work', s, flags=re.IGNORECASE)
+
+        # Continuous tense fixes: "am study" -> "am studying"
+        s = re.sub(r'\b(am|is|are|was|were)\s+study\b', r'\1 studying', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(am|is|are|was|were)\s+play\b', r'\1 playing', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(am|is|are|was|were)\s+work\b', r'\1 working', s, flags=re.IGNORECASE)
+
+        # Missing preposition in grade/standard: "studying 7th standard" -> "studying in 7th standard"
+        s = re.sub(r'\bstudy(?:ing)?\s+(\d+(?:st|nd|rd|th))\s+standard\b', r'studying in the \1 standard', s, flags=re.IGNORECASE)
+
+        # Preserve casing of first character
+        if sentence and sentence[0].isupper() and s and s[0].islower():
+            s = s[0].upper() + s[1:]
+
+        return s
 
     def _fallback_correction(self, text: str) -> str:
         """Lightweight secondary fallback correction when model cannot be loaded."""
@@ -178,6 +241,8 @@ class GrammarService:
         
         for pat, repl in corrections:
             corrected = re.sub(pat, repl, corrected, flags=re.IGNORECASE)
+
+        corrected = self._polish_sentence(corrected)
 
         # Capitalize first letter
         if corrected and corrected[0].islower():
@@ -221,20 +286,30 @@ class GrammarService:
             matched_slice = orig_tokens[i1:i2]
             corr_slice = corr_words[j1:j2]
 
-            if matched_slice:
-                start_offset = matched_slice[0]['start']
-                end_offset = matched_slice[-1]['end']
-                matched_text = original_text[start_offset:end_offset]
+            # Check if this is an apostrophe-s or contraction attachment to previous token
+            if not matched_slice and i1 > 0 and len(corr_slice) >= 1 and corr_slice[0] in ("'", "’"):
+                prev_token = orig_tokens[i1 - 1]
+                start_offset = prev_token['start']
+                end_offset = prev_token['end']
+                matched_text = prev_token['text']
+                contr = "".join(corr_slice)
+                replacement_text = f"{matched_text}{contr}"
             else:
-                # Word inserted in corrected text
-                prev_token = orig_tokens[i1 - 1] if i1 > 0 else None
-                start_offset = prev_token['end'] if prev_token else 0
-                end_offset = start_offset
-                matched_text = ""
+                if matched_slice:
+                    start_offset = matched_slice[0]['start']
+                    end_offset = matched_slice[-1]['end']
+                    matched_text = original_text[start_offset:end_offset]
+                else:
+                    prev_token = orig_tokens[i1 - 1] if i1 > 0 else None
+                    start_offset = prev_token['end'] if prev_token else 0
+                    end_offset = start_offset
+                    matched_text = ""
 
-            # Format replacement text with natural punctuation spacing
-            replacement_text = " ".join(corr_slice)
-            replacement_text = re.sub(r'\s+([,.:;?!])', r'\1', replacement_text)
+                # Format replacement text with natural punctuation spacing
+                replacement_text = " ".join(corr_slice)
+                replacement_text = re.sub(r'\s+([,.:;?!])', r'\1', replacement_text)
+                replacement_text = re.sub(r"\s+'\s*([a-zA-Z]+)", r"'\1", replacement_text)
+                replacement_text = re.sub(r"^'\s*([a-zA-Z]+)", r"'\1", replacement_text)
 
             # Categorize the change
             category = self._categorize_difference(matched_text, replacement_text)
@@ -258,6 +333,12 @@ class GrammarService:
         m_lower = matched.strip().lower()
         r_lower = replacement.strip().lower()
 
+        # Possessive noun form (friend -> friend's, Rahul -> Rahul's)
+        if replacement.endswith("'s") and matched == replacement[:-2]:
+            return 'grammar'
+        if replacement in ("'s", "’s"):
+            return 'grammar'
+
         # Pure punctuation
         if (all(c in ",.:;?!'\"-()" for c in matched) and all(c in ",.:;?!'\"-()" for c in replacement)) or \
            (not matched and all(c in ",.:;?!" for c in replacement)):
@@ -267,13 +348,23 @@ class GrammarService:
         if m_lower == r_lower and matched != replacement:
             return 'punctuation'
 
+        # Subject-verb agreement / verb endings (helps -> help, studies -> study, goes -> go, works -> work)
+        if (m_lower.endswith('s') and m_lower[:-1] == r_lower) or \
+           (r_lower.endswith('s') and r_lower[:-1] == m_lower) or \
+           (m_lower.endswith('es') and m_lower[:-2] == r_lower) or \
+           (r_lower.endswith('es') and r_lower[:-2] == m_lower) or \
+           (m_lower.endswith('ies') and m_lower[:-3] + 'y' == r_lower) or \
+           (r_lower.endswith('ies') and r_lower[:-3] + 'y' == m_lower):
+            return 'grammar'
+
         # Common verbs, auxiliaries, tenses, and subject-verb agreement
         verbs = {
             'is', 'are', 'was', 'were', 'am', 'be', 'been', 'being',
             'has', 'have', 'had', 'do', 'does', 'did', "doesn't", "don't",
             'go', 'goes', 'went', 'gone', 'study', 'studying', 'studied',
             'play', 'plays', 'playing', 'played', 'see', 'saw', 'seen',
-            'work', 'works', 'working', 'worked', 'know', 'knows', 'knew'
+            'work', 'works', 'working', 'worked', 'know', 'knows', 'knew',
+            'help', 'helps', 'helping', 'helped', 'want', 'wants', 'live', 'lives'
         }
         if any(w in verbs for w in m_lower.split()) or any(w in verbs for w in r_lower.split()):
             return 'grammar'
@@ -304,12 +395,31 @@ class GrammarService:
             return f"Capitalized '{matched}' to '{replacement}'."
         if category == 'punctuation':
             return f"Updated punctuation mark from '{matched}' to '{replacement}'."
+
+        # Possessive noun
+        if replacement.endswith("'s") and matched == replacement[:-2]:
+            return f"Possessive noun: changed '{matched}' to '{replacement}' to indicate possession."
+        if replacement in ("'s", "’s"):
+            return f"Possessive: added ''s' to indicate possession."
+
         if category == 'grammar':
             # Check for subject-verb agreement
-            sva_pairs = [('is', 'are'), ('are', 'is'), ('was', 'were'), ('were', 'was'), ('go', 'goes'), ('do', 'does'), ('have', 'has'), ("don't", "doesn't")]
+            sva_pairs = [
+                ('is', 'are'), ('are', 'is'), ('was', 'were'), ('were', 'was'),
+                ('go', 'goes'), ('goes', 'go'), ('do', 'does'), ('does', 'do'),
+                ('have', 'has'), ('has', 'have'), ("don't", "doesn't"), ("doesn't", "don't"),
+                ('am', 'is'), ('is', 'am'), ('am', 'are'), ('are', 'am')
+            ]
             for a, b in sva_pairs:
                 if matched.lower() == a and replacement.lower() == b:
                     return f"Subject-verb agreement: changed '{matched}' to '{replacement}' to agree with subject."
+
+            # Verb inflection / agreement (helps -> help, studies -> study, plays -> play)
+            if (matched.lower().endswith('s') and matched.lower()[:-1] == replacement.lower()) or \
+               (replacement.lower().endswith('s') and replacement.lower()[:-1] == matched.lower()) or \
+               (matched.lower().endswith('ies') and matched.lower()[:-3] + 'y' == replacement.lower()):
+                return f"Subject-verb agreement: changed '{matched}' to '{replacement}' to agree with subject."
+
             # Check for continuous tense
             if 'study' in matched.lower() and 'studying' in replacement.lower():
                 return f"Verb tense: changed '{matched}' to '{replacement}' for proper continuous tense."

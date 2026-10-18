@@ -123,5 +123,18 @@ class TestT5GrammarCorrection(unittest.TestCase):
         self.assertEqual(res['error_count'], 0)
         self.assertEqual(res['corrected_text'], "")
 
+    def test_example_22_possessive_and_sva_passage(self):
+        """Input: 'My best friend name is Rahul. He are very kind and helpful. We studies together and helps each other with homework. Sometimes, we plays games after school.'"""
+        text = "My best friend name is Rahul. He are very kind and helpful. We studies together and helps each other with homework. Sometimes, we plays games after school. I am happy to have a friend like him."
+        res = grammar_service.check_text(text)
+        corrected = res['corrected_text']
+        self.assertIn("My best friend's name is Rahul.", corrected)
+        self.assertIn("He is very kind", corrected)
+        self.assertIn("We study together and help each other", corrected)
+        self.assertIn("we play games", corrected)
+        self.assertIn("I am happy to have a friend like him.", corrected)
+        self.assertGreaterEqual(res['error_count'], 4)
+
 if __name__ == '__main__':
     unittest.main()
+

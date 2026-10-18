@@ -64,7 +64,14 @@ def analyze_passage():
 
         if llm_result and 'corrected_text' in llm_result:
             corrected_text = llm_result['corrected_text']
-            errors = llm_result.get('errors', [])
+            # Extract precise character offsets and token diffs for frontend highlight cards
+            errors = grammar_service._extract_errors_from_diff(text, corrected_text)
+            category_counts = {
+                'grammar': sum(1 for e in errors if e.get('category') == 'grammar'),
+                'spelling': sum(1 for e in errors if e.get('category') == 'spelling'),
+                'punctuation': sum(1 for e in errors if e.get('category') == 'punctuation'),
+                'style': sum(1 for e in errors if e.get('category') == 'style'),
+            }
             grammar_score = float(llm_result.get('grammar_score', 80))
             grammar_formula = f"AI Accuracy Evaluation = {grammar_score}%"
             questions = llm_result.get('questions', [])
@@ -76,12 +83,6 @@ def analyze_passage():
                     'message': raw_feedback or 'Great writing! Review your corrected text to elevate your English fluency.'
                 }
             ]
-            category_counts = {
-                'grammar': sum(1 for e in errors if e.get('category') == 'grammar'),
-                'spelling': sum(1 for e in errors if e.get('category') == 'spelling'),
-                'punctuation': sum(1 for e in errors if e.get('category') == 'punctuation'),
-                'style': sum(1 for e in errors if e.get('category') == 'style'),
-            }
         else:
             # Smart Built-in Engine
             grammar_result = grammar_service.check_text(text)
