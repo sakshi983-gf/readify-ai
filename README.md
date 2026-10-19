@@ -24,6 +24,40 @@
 
 ---
 
+## 📸 Platform Visual Showcase & Screenshots
+
+### 1. Interactive Reading Workspace & Real-Time Squiggly Editor
+> *Live grammar analysis with 11-category classification, colored error underlines, DOM in-place corrections, and dual-pane before/after diff views.*
+
+![Reading Workspace & Grammar Analysis](docs/screenshots/02_workspace_analysis.png)
+
+### 2. 24/7 Conversational AI English Tutor & Roleplay
+> *Pedagogical tutor supporting deep grammar explanations and conversational roleplays (Job Interview, Academic Seminar, Coffee Chat).*
+
+![AI English Tutor](docs/screenshots/03_ai_tutor_roleplay.png)
+
+### 3. "Listen & Speak" Audio & Pronunciation Coach
+> *Speech cadence, articulation tempo (WPM), and phonetic accuracy scoring powered by the canonical Carnegie Mellon Pronouncing Dictionary (CMUDict).*
+
+![Listen & Speak Audio Coach](docs/screenshots/04_listen_and_speak_coach.png)
+
+### 4. Modern Landing Page & Platform Overview
+> *Clean, responsive interface with instant metrics, readability level estimators, and zero API-key dependencies.*
+
+![Landing Page](docs/screenshots/01_landing_page.png)
+
+### 5. Interactive Grammar Gym & Adaptive Drills
+> *Pedagogical multiple-choice questions across all 11 error categories and 3 difficulty tiers with instant rule explanations.*
+
+![Interactive Practice](docs/screenshots/05_practice_quizzes.png)
+
+### 6. Deep Learning Architecture & Empirical Benchmarks
+> *Held-out validation metrics, GLEU fluency scores, and transparent reproducible pipeline documentation.*
+
+![AI Model Architecture](docs/screenshots/06_ai_architecture.png)
+
+---
+
 ## 2. System Architecture & Component Diagram
 
 ```mermaid
