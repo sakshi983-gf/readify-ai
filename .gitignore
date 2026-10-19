@@ -51,3 +51,14 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Large Model Checkpoints & Weights (>100MB GitHub limit)
+*.safetensors
+*.bin
+*.pt
+*.onnx
+backend/ml/checkpoints/model.safetensors
+backend/ml/checkpoints/tokenizer.json
+
+# Scratch directory
+scratch/

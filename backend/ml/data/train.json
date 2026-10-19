@@ -1,0 +1,320 @@
+[
+  {
+    "id": "gec_0016",
+    "input": "She has been living here since five years.",
+    "target": "She has been living here for five years.",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0050",
+    "input": "hlo guys i am study 7th standard",
+    "target": "Hello guys, I am studying in the 7th standard.",
+    "type": "spelling"
+  },
+  {
+    "id": "gec_0030",
+    "input": "We discussed about the problem for hours.",
+    "target": "We discussed the problem for hours.",
+    "type": "prepositions"
+  },
+  {
+    "id": "gec_0026",
+    "input": "He wants to become an engineer in future.",
+    "target": "He wants to become an engineer in the future.",
+    "type": "articles"
+  },
+  {
+    "id": "gec_0008",
+    "input": "Cats is sleeping on the floor.",
+    "target": "Cats are sleeping on the floor.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0058",
+    "input": "It is a sunny day isn't it",
+    "target": "It is a sunny day, isn't it?",
+    "type": "punctuation"
+  },
+  {
+    "id": "gec_0045",
+    "input": "She bought two pairs of shoes and three pant.",
+    "target": "She bought two pairs of shoes and three pairs of pants.",
+    "type": "singular_plural"
+  },
+  {
+    "id": "gec_0064",
+    "input": "She works as a software engineer.",
+    "target": "She works as a software engineer.",
+    "type": "already_correct"
+  },
+  {
+    "id": "gec_0017",
+    "input": "I am study seventh semester in computer science.",
+    "target": "I am studying in the seventh semester of computer science.",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0051",
+    "input": "He is definately the best student in our class.",
+    "target": "He is definitely the best student in our class.",
+    "type": "spelling"
+  },
+  {
+    "id": "gec_0010",
+    "input": "The list of items are on the desk.",
+    "target": "The list of items is on the desk.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0034",
+    "input": "She is good in mathematics and science.",
+    "target": "She is good at mathematics and science.",
+    "type": "prepositions"
+  },
+  {
+    "id": "gec_0031",
+    "input": "She was married with a doctor.",
+    "target": "She was married to a doctor.",
+    "type": "prepositions"
+  },
+  {
+    "id": "gec_0021",
+    "input": "She did not knew the answer to the question.",
+    "target": "She did not know the answer to the question.",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0019",
+    "input": "He can plays the guitar very well.",
+    "target": "He can play the guitar very well.",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0047",
+    "input": "Hardly he had arrived when the phone rang.",
+    "target": "Hardly had he arrived when the phone rang.",
+    "type": "word_order"
+  },
+  {
+    "id": "gec_0024",
+    "input": "I saw movie yesterday; movie was exciting.",
+    "target": "I saw a movie yesterday; the movie was exciting.",
+    "type": "articles"
+  },
+  {
+    "id": "gec_0040",
+    "input": "The dog was wagging it's tail happily.",
+    "target": "The dog was wagging its tail happily.",
+    "type": "pronouns"
+  },
+  {
+    "id": "gec_0046",
+    "input": "Always she comes late to class.",
+    "target": "She always comes late to class.",
+    "type": "word_order"
+  },
+  {
+    "id": "gec_0062",
+    "input": "The reason why is because it rained heavily.",
+    "target": "The reason is that it rained heavily.",
+    "type": "sentence_structure"
+  },
+  {
+    "id": "gec_0020",
+    "input": "Did you saw the news this morning?",
+    "target": "Did you see the news this morning?",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0023",
+    "input": "She is an honest woman and good teacher.",
+    "target": "She is an honest woman and a good teacher.",
+    "type": "articles"
+  },
+  {
+    "id": "gec_0012",
+    "input": "Each student have a notebook.",
+    "target": "Each student has a notebook.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0041",
+    "input": "She has two childs and one baby.",
+    "target": "She has two children and one baby.",
+    "type": "singular_plural"
+  },
+  {
+    "id": "gec_0059",
+    "input": "Although he was tired he finished the project",
+    "target": "Although he was tired, he finished the project.",
+    "type": "punctuation"
+  },
+  {
+    "id": "gec_0053",
+    "input": "She waited untill the rain completely stopped.",
+    "target": "She waited until the rain completely stopped.",
+    "type": "spelling"
+  },
+  {
+    "id": "gec_0066",
+    "input": "The sun rises in the east.",
+    "target": "The sun rises in the east.",
+    "type": "already_correct"
+  },
+  {
+    "id": "gec_0043",
+    "input": "He gave me a good advice on my career.",
+    "target": "He gave me good advice on my career.",
+    "type": "singular_plural"
+  },
+  {
+    "id": "gec_0025",
+    "input": "Sun rises in the east.",
+    "target": "The sun rises in the east.",
+    "type": "articles"
+  },
+  {
+    "id": "gec_0060",
+    "input": "Because he was ill, so he could not attend.",
+    "target": "Because he was ill, he could not attend.",
+    "type": "sentence_structure"
+  },
+  {
+    "id": "gec_0005",
+    "input": "She go to school every day.",
+    "target": "She goes to school every day.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0037",
+    "input": "Between you and I, this is a secret.",
+    "target": "Between you and me, this is a secret.",
+    "type": "pronouns"
+  },
+  {
+    "id": "gec_0022",
+    "input": "He bought a apple and an orange.",
+    "target": "He bought an apple and an orange.",
+    "type": "articles"
+  },
+  {
+    "id": "gec_0054",
+    "input": "He has alot of knowledge about computer sciense.",
+    "target": "He has a lot of knowledge about computer science.",
+    "type": "spelling"
+  },
+  {
+    "id": "gec_0011",
+    "input": "Neither of the boys were present.",
+    "target": "Neither of the boys was present.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0001",
+    "input": "My best friend name is Rahul.",
+    "target": "My best friend's name is Rahul.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0018",
+    "input": "By the time we arrived, the bus already left.",
+    "target": "By the time we arrived, the bus had already left.",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0055",
+    "input": "water boils at one hundred degrees celsius",
+    "target": "Water boils at one hundred degrees Celsius.",
+    "type": "capitalization"
+  },
+  {
+    "id": "gec_0029",
+    "input": "The teacher told to us to sit down.",
+    "target": "The teacher told us to sit down.",
+    "type": "prepositions"
+  },
+  {
+    "id": "gec_0049",
+    "input": "Where you are going this evening?",
+    "target": "Where are you going this evening?",
+    "type": "word_order"
+  },
+  {
+    "id": "gec_0027",
+    "input": "We went to a Taj Mahal during summer vacation.",
+    "target": "We went to the Taj Mahal during summer vacation.",
+    "type": "articles"
+  },
+  {
+    "id": "gec_0057",
+    "input": "Where are you going I am going home",
+    "target": "Where are you going? I am going home.",
+    "type": "punctuation"
+  },
+  {
+    "id": "gec_0042",
+    "input": "All the mans in the village gathered in the hall.",
+    "target": "All the men in the village gathered in the hall.",
+    "type": "singular_plural"
+  },
+  {
+    "id": "gec_0013",
+    "input": "I have see that film already.",
+    "target": "I have seen that film already.",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0065",
+    "input": "Water boils at one hundred degrees Celsius.",
+    "target": "Water boils at one hundred degrees Celsius.",
+    "type": "already_correct"
+  },
+  {
+    "id": "gec_0052",
+    "input": "We need to keep these two matters seperate.",
+    "target": "We need to keep these two matters separate.",
+    "type": "spelling"
+  },
+  {
+    "id": "gec_0039",
+    "input": "Every student must submit their assignment.",
+    "target": "Every student must submit their assignment.",
+    "type": "pronouns"
+  },
+  {
+    "id": "gec_0033",
+    "input": "He arrived to the airport at five o'clock.",
+    "target": "He arrived at the airport at five o'clock.",
+    "type": "prepositions"
+  },
+  {
+    "id": "gec_0063",
+    "input": "I went to school yesterday.",
+    "target": "I went to school yesterday.",
+    "type": "already_correct"
+  },
+  {
+    "id": "gec_0014",
+    "input": "We was watching a movie when the lights went out.",
+    "target": "We were watching a movie when the lights went out.",
+    "type": "verb_tense"
+  },
+  {
+    "id": "gec_0056",
+    "input": "i live in london with my parents",
+    "target": "I live in London with my parents.",
+    "type": "capitalization"
+  },
+  {
+    "id": "gec_0002",
+    "input": "He are very kind and helpful.",
+    "target": "He is very kind and helpful.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0003",
+    "input": "We studies together and helps each other with homework.",
+    "target": "We study together and help each other with homework.",
+    "type": "subject_verb_agreement"
+  }
+]

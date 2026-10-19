@@ -14,6 +14,15 @@ from backend.config import Config
 from backend.database.db import init_db
 from backend.routes.analysis_routes import analysis_bp
 from backend.routes.history_routes import history_bp
+from backend.routes.auth_routes import auth_bp
+from backend.routes.practice_routes import practice_bp
+from backend.routes.coach_routes import coach_bp
+from backend.routes.comprehension_routes import comprehension_bp
+from backend.routes.model_routes import model_bp
+from backend.routes.tutor_routes import tutor_bp
+from backend.routes.tone_routes import tone_bp
+from backend.routes.audio_routes import audio_bp
+from backend.routes.document_routes import document_bp
 
 # Configure logging
 logging.basicConfig(
@@ -35,22 +44,31 @@ def create_app(config_class=Config):
         # Ensure database directory exists
         db_path = Path(app.config['DATABASE_PATH'])
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        init_db()
+        init_db(str(db_path))
 
     # Health check endpoint
     @app.route('/api/health', methods=['GET'])
     def health_check():
         return jsonify({
             'status': 'healthy',
-            'service': 'Readify Backend API',
-            'version': '1.0.0',
+            'service': 'Readify AI English Learning & GEC Platform',
+            'version': '2.0.0',
             'database': 'SQLite connected',
-            'mode': 'Local NLP Engine Active'
+            'mode': 'Hybrid Transformer & Classification Engine Active'
         }), 200
 
     # Register blueprints
+    app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(analysis_bp, url_prefix='/api')
     app.register_blueprint(history_bp, url_prefix='/api')
+    app.register_blueprint(practice_bp, url_prefix='/api')
+    app.register_blueprint(coach_bp, url_prefix='/api')
+    app.register_blueprint(comprehension_bp, url_prefix='/api')
+    app.register_blueprint(model_bp, url_prefix='/api')
+    app.register_blueprint(tutor_bp, url_prefix='/api')
+    app.register_blueprint(tone_bp, url_prefix='/api')
+    app.register_blueprint(audio_bp, url_prefix='/api')
+    app.register_blueprint(document_bp, url_prefix='/api')
 
     # Global error handlers
     @app.errorhandler(404)

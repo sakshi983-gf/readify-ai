@@ -1,14 +1,36 @@
 import React, { useState } from 'react';
-import { BookOpen, Sparkles, LayoutDashboard, PenTool, History, Menu, X, ArrowRight } from 'lucide-react';
+import { 
+  BookOpen, 
+  Sparkles, 
+  LayoutDashboard, 
+  PenTool, 
+  History, 
+  Menu, 
+  X, 
+  ArrowRight,
+  Target,
+  BrainCircuit,
+  Cpu,
+  User,
+  LogOut,
+  LogIn,
+  Bot,
+  Headphones
+} from 'lucide-react';
 
-export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
+export default function Navbar({ activePage, setActivePage, onOpenAIConfig, user, onOpenAuth, onLogout }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
     { id: 'landing', label: 'Home' },
     { id: 'workspace', label: 'Workspace', icon: PenTool },
+    { id: 'tutor', label: 'AI Tutor', icon: Bot },
+    { id: 'pronunciation', label: 'Audio Coach', icon: Headphones },
+    { id: 'practice', label: 'Practice', icon: Target },
+    { id: 'comprehension', label: 'Reading', icon: BookOpen },
+    { id: 'coach', label: 'AI Coach', icon: BrainCircuit },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'history', label: 'History', icon: History },
+    { id: 'model-info', label: 'AI Architecture', icon: Cpu },
   ];
 
   const handleNavClick = (pageId) => {
@@ -94,13 +116,13 @@ export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
               padding: '2px 6px',
               borderRadius: '4px',
             }}>
-              AI Assistant
+              AI Platform
             </span>
           </div>
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav style={{ display: 'none', alignItems: 'center', gap: '32px' }} className="desktop-nav">
+        <nav style={{ display: 'none', alignItems: 'center', gap: '22px' }} className="desktop-nav">
           {navLinks.map((link) => {
             const isActive = activePage === link.id;
             return (
@@ -108,7 +130,7 @@ export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
                 key={link.id}
                 onClick={() => handleNavClick(link.id)}
                 style={{
-                  fontSize: '0.92rem',
+                  fontSize: '0.88rem',
                   fontWeight: isActive ? 700 : 500,
                   color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
                   position: 'relative',
@@ -116,7 +138,10 @@ export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
                   transition: 'color 0.2s',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '5px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer'
                 }}
               >
                 {link.label}
@@ -152,13 +177,64 @@ export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
               fontWeight: 700,
               color: 'var(--text-secondary)',
               transition: 'all 0.15s ease',
+              cursor: 'pointer'
             }}
             title="Configure AI Model Engine"
             className="ai-engine-btn"
           >
             <Sparkles size={14} style={{ color: 'var(--primary)' }} />
-            <span>AI Model</span>
+            <span>AI Config</span>
           </button>
+
+          {/* User Auth indicator */}
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: '#EFF6FF',
+                  border: '1px solid #BFDBFE',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: '#1D4ED8',
+                }}
+                title={`Signed in as ${user.email} (${user.role})`}
+              >
+                <User size={13} />
+                <span>{user.name.split(' ')[0]}</span>
+                <span style={{
+                  fontSize: '0.65rem',
+                  backgroundColor: '#DBEAFE',
+                  padding: '1px 5px',
+                  borderRadius: '3px',
+                  textTransform: 'uppercase'
+                }}>
+                  {user.role}
+                </span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '6px 10px' }}
+                title="Sign Out"
+              >
+                <LogOut size={13} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="btn btn-secondary btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <LogIn size={14} />
+              <span>Sign In</span>
+            </button>
+          )}
 
           <button
             onClick={() => handleNavClick('workspace')}
@@ -181,6 +257,8 @@ export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
               borderRadius: '8px',
               color: 'var(--text-main)',
               background: 'var(--surface-secondary)',
+              border: 'none',
+              cursor: 'pointer'
             }}
             className="mobile-menu-btn"
             aria-label="Toggle menu"
@@ -218,6 +296,8 @@ export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
                     fontWeight: isActive ? 700 : 500,
                     textAlign: 'left',
                     width: '100%',
+                    border: 'none',
+                    cursor: 'pointer'
                   }}
                 >
                   {Icon && <Icon size={18} />}
@@ -225,10 +305,31 @@ export default function Navbar({ activePage, setActivePage, onOpenAIConfig }) {
                 </button>
               );
             })}
+            
+            {user ? (
+              <button
+                onClick={onLogout}
+                className="btn btn-secondary"
+                style={{ marginTop: '8px', width: '100%', justifyContent: 'center' }}
+              >
+                <LogOut size={16} />
+                <span>Sign Out ({user.name})</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => { setMobileMenuOpen(false); onOpenAuth(); }}
+                className="btn btn-secondary"
+                style={{ marginTop: '8px', width: '100%', justifyContent: 'center' }}
+              >
+                <LogIn size={16} />
+                <span>Sign In / Demo Login</span>
+              </button>
+            )}
+
             <button
               onClick={() => handleNavClick('workspace')}
               className="btn btn-primary"
-              style={{ marginTop: '12px', width: '100%', justifyContent: 'center' }}
+              style={{ marginTop: '6px', width: '100%', justifyContent: 'center' }}
             >
               <span>Start Reading</span>
               <ArrowRight size={16} />

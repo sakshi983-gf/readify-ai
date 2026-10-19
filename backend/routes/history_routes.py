@@ -1,17 +1,21 @@
 import logging
 from flask import Blueprint, request, jsonify
 from backend.database import db
+from backend.routes.auth_routes import get_current_user
 
 logger = logging.getLogger(__name__)
 history_bp = Blueprint('history', __name__)
 
 @history_bp.route('/history', methods=['GET'])
 def get_history_list():
-    """Retrieve reading analysis history records."""
+    """Retrieve reading analysis history records (user-scoped if logged in)."""
     try:
+        user = get_current_user()
+        user_id = user['id'] if user and user.get('role') != 'admin' else None
+
         limit = min(int(request.args.get('limit', 50)), 100)
         offset = max(int(request.args.get('offset', 0)), 0)
-        records = db.get_history(limit=limit, offset=offset)
+        records = db.get_history(user_id=user_id, limit=limit, offset=offset)
         return jsonify({
             'success': True,
             'data': records,
@@ -68,7 +72,9 @@ def clear_all_history_items():
 def get_dashboard():
     """Retrieve aggregated stats, recent activity, and score trends for the dashboard."""
     try:
-        stats = db.get_dashboard_stats()
+        user = get_current_user()
+        user_id = user['id'] if user and user.get('role') != 'admin' else None
+        stats = db.get_dashboard_stats(user_id=user_id)
         return jsonify({
             'success': True,
             'data': stats

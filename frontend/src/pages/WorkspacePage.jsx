@@ -17,9 +17,18 @@ import {
   Send,
   Zap,
   ChevronRight,
-  Info
+  Info,
+  Palette,
+  Volume2,
+  Wand2,
+  Layers,
+  UploadCloud
 } from 'lucide-react';
 import ScoreRing from '../components/ScoreRing';
+import InlineGrammarEditor from '../components/InlineGrammarEditor';
+import AudioSpeechCoach from '../components/AudioSpeechCoach';
+import ToneStudioWidget from '../components/ToneStudioWidget';
+import DocumentDropzone from '../components/DocumentDropzone';
 import { SAMPLE_PASSAGES } from '../constants/samplePassages';
 import api from '../services/api';
 
@@ -46,6 +55,9 @@ export default function WorkspacePage({
 
   // Copy state
   const [copied, setCopied] = useState(false);
+
+  // Document & PDF Dropzone state
+  const [showDropzone, setShowDropzone] = useState(false);
 
   // Sync props if changed
   useEffect(() => {
@@ -168,6 +180,25 @@ export default function WorkspacePage({
     setTimeout(() => setCopied(false), 2500);
   };
 
+  // 1-Click Accept Fix from Squiggly Editor
+  const handleAcceptFix = (err, replacement) => {
+    if (!analysisResult) return;
+    const currentText = analysisResult.original_text || text;
+    const start = Math.max(0, err.offset);
+    const len = Math.max(1, err.length || (err.matched_text ? err.matched_text.length : 1));
+    const updated = currentText.slice(0, start) + replacement + currentText.slice(start + len);
+    setText(updated);
+    setAnalysisResult(prev => ({
+      ...prev,
+      original_text: updated,
+      grammar: {
+        ...prev.grammar,
+        errors: (prev.grammar?.errors || []).filter(e => e.offset !== err.offset),
+        error_count: Math.max(0, (prev.grammar?.error_count || 1) - 1),
+      }
+    }));
+  };
+
   // Reset workspace
   const handleClear = () => {
     if (text && !window.confirm('Clear all text and start fresh?')) return;
@@ -272,6 +303,29 @@ export default function WorkspacePage({
                 {s.tag}
               </button>
             ))}
+            <span style={{ color: 'var(--border-subtle)', margin: '0 4px' }}>|</span>
+
+            {/* Document / PDF Dropzone Button */}
+            <button
+              onClick={() => setShowDropzone(prev => !prev)}
+              style={{
+                fontSize: '0.78rem',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                backgroundColor: showDropzone ? 'var(--primary-light)' : 'var(--surface-secondary)',
+                color: showDropzone ? 'var(--primary)' : 'var(--text-main)',
+                border: `1px solid ${showDropzone ? 'var(--primary)' : 'var(--border-subtle)'}`,
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <UploadCloud size={14} style={{ color: 'var(--primary)' }} />
+              <span>{showDropzone ? 'Hide PDF Dropzone' : 'Drop or Upload PDF / Doc'}</span>
+            </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -287,6 +341,28 @@ export default function WorkspacePage({
             )}
           </div>
         </div>
+
+        {/* Collapsible Document Dropzone Component */}
+        {showDropzone && (
+          <DocumentDropzone
+            onImportText={(extractedText, docTitle) => {
+              setText(extractedText);
+              if (docTitle) setTitle(docTitle);
+              setShowDropzone(false);
+              setAnalysisResult(null);
+              setQuizResults(null);
+              setUserAnswers({});
+              setErrorMsg('');
+            }}
+            onNavigateToCoach={(coachText) => {
+              setText(coachText);
+              if (setActivePage) {
+                setActivePage('pronunciation');
+              }
+            }}
+            onClose={() => setShowDropzone(false)}
+          />
+        )}
 
         {/* Optional Title Input */}
         <input
@@ -334,6 +410,10 @@ export default function WorkspacePage({
           onBlur={(e) => {
             e.target.style.borderColor = 'var(--border-subtle)';
             e.target.style.boxShadow = 'none';
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setShowDropzone(true);
           }}
         />
 
@@ -572,6 +652,24 @@ export default function WorkspacePage({
               <CheckCircle2 size={16} />
               <span>Personalized Feedback</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('tone')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                fontWeight: activeTab === 'tone' ? 700 : 500,
+                color: activeTab === 'tone' ? 'var(--primary)' : 'var(--text-secondary)',
+                borderBottom: activeTab === 'tone' ? '2px solid var(--primary)' : '2px solid transparent',
+                fontSize: '0.94rem',
+              }}
+            >
+              <Palette size={16} />
+              <span>Multi-Tone Studio</span>
+              <span className="badge badge-primary">4 Styles</span>
+            </button>
           </div>
 
           {/* TAB 1: GRAMMAR CORRECTIONS */}
@@ -582,34 +680,48 @@ export default function WorkspacePage({
                 gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                 gap: '24px',
               }}>
-                {/* Original Text Pane */}
+                {/* Original Text Pane with Interactive Squiggly Editor */}
                 <div className="card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      Original Text
-                    </h3>
-                    <span className="badge badge-secondary">Unmodified</span>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        Interactive Squiggly Editor
+                      </h3>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Hover or click wavy underlines to view error category & 1-click accept
+                      </p>
+                    </div>
+                    <span className="badge badge-primary">Live Squiggles</span>
                   </div>
                   <div style={{
                     padding: '16px',
                     borderRadius: 'var(--radius-md)',
                     backgroundColor: '#F8FAFC',
-                    fontSize: '0.95rem',
-                    lineHeight: 1.75,
+                    fontSize: '0.98rem',
+                    lineHeight: 1.8,
                     border: '1px solid #EEF2F6',
-                    whiteSpace: 'pre-wrap',
                     minHeight: '160px',
+                    position: 'relative',
                   }}>
-                    {analysisResult.original_text}
+                    <InlineGrammarEditor 
+                      originalText={analysisResult.original_text}
+                      errors={analysisResult.grammar?.errors || []}
+                      onAcceptFix={handleAcceptFix}
+                    />
                   </div>
                 </div>
 
                 {/* Corrected Text Pane */}
                 <div className="card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      Corrected Text
-                    </h3>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        Corrected Text
+                      </h3>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        AI-polished version with preserved meaning & fixed grammar
+                      </p>
+                    </div>
                     <button
                       onClick={handleCopyCorrected}
                       className="btn btn-secondary btn-sm"
@@ -631,8 +743,8 @@ export default function WorkspacePage({
                     padding: '16px',
                     borderRadius: 'var(--radius-md)',
                     backgroundColor: '#F0FDF4',
-                    fontSize: '0.95rem',
-                    lineHeight: 1.75,
+                    fontSize: '0.98rem',
+                    lineHeight: 1.8,
                     border: '1px solid #DCFCE7',
                     whiteSpace: 'pre-wrap',
                     minHeight: '160px',
@@ -642,6 +754,11 @@ export default function WorkspacePage({
                   </div>
                 </div>
               </div>
+
+              {/* Listen & Speak Pronunciation Coach Widget */}
+              <AudioSpeechCoach 
+                text={analysisResult.corrected_text || analysisResult.original_text}
+              />
 
               {/* Detected Errors List */}
               <div className="card" style={{ padding: '24px' }}>
@@ -655,6 +772,29 @@ export default function WorkspacePage({
                     </p>
                   </div>
                 </div>
+
+                {/* Fine-grained Error Type Breakdown Pills */}
+                {analysisResult.grammar.type_counts && Object.keys(analysisResult.grammar.type_counts).length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                    {Object.entries(analysisResult.grammar.type_counts).map(([typeKey, count]) => (
+                      <span 
+                        key={typeKey} 
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          backgroundColor: '#EFF6FF',
+                          border: '1px solid #DBEAFE',
+                          color: '#1E40AF',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          textTransform: 'capitalize'
+                        }}
+                      >
+                        {typeKey.replace(/_/g, ' ')}: <strong>{count}</strong>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {analysisResult.grammar.errors.length === 0 ? (
                   <div style={{
@@ -690,16 +830,40 @@ export default function WorkspacePage({
                         }}
                       >
                         <div style={{ maxWidth: '80%' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                             <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>
-                              {err.category.toUpperCase()}
+                              {err.type_label || (err.category ? err.category.toUpperCase() : 'GRAMMAR')}
                             </span>
-                            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                            {err.confidence && (
+                              <span style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                backgroundColor: '#EFF6FF',
+                                color: '#1D4ED8',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                              }}>
+                                {Math.round(err.confidence * 100)}% Confidence
+                              </span>
+                            )}
+                            {err.requires_review && (
+                              <span style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                backgroundColor: '#FEE2E2',
+                                color: '#991B1B',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                              }}>
+                                Review Recommended
+                              </span>
+                            )}
+                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
                               Offset {err.offset}
                             </span>
                           </div>
                           <p style={{ fontSize: '0.92rem', fontWeight: 600, color: '#92400E' }}>
-                            {err.message}
+                            {err.explanation || err.message}
                           </p>
                         </div>
 
@@ -1105,6 +1269,19 @@ export default function WorkspacePage({
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 5: MULTI-TONE STUDIO */}
+          {activeTab === 'tone' && (
+            <div style={{ animation: 'fadeIn 0.25s ease' }}>
+              <ToneStudioWidget 
+                currentText={analysisResult.corrected_text || text}
+                onApplyToWorkspace={(rewritten) => {
+                  setText(rewritten);
+                  alert('Rewritten text applied to workspace input! You can run grammar analysis or edit further.');
+                }}
+              />
             </div>
           )}
         </div>

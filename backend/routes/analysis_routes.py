@@ -7,6 +7,7 @@ from backend.services.comprehension_service import comprehension_service
 from backend.services.scoring_service import scoring_service
 from backend.services.llm_service import llm_service
 from backend.database import db
+from backend.routes.auth_routes import get_current_user
 
 logger = logging.getLogger(__name__)
 analysis_bp = Blueprint('analysis', __name__)
@@ -127,7 +128,9 @@ def analyze_passage():
             'feedback': feedback,
             'status': 'analyzed'
         }
-        saved_record = db.save_analysis(record_data)
+        user = get_current_user()
+        user_id = user['id'] if user else None
+        saved_record = db.save_analysis(record_data, user_id=user_id)
 
         # Sanitize questions for client response (remove correct answers until submitted)
         sanitized_questions = []

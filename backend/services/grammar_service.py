@@ -5,6 +5,7 @@ import logging
 from typing import List, Dict, Any
 import nltk
 from nltk.tokenize import sent_tokenize
+from backend.services.classification_service import classification_service
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -80,13 +81,19 @@ class GrammarService:
         # Step 2: Extract real, accurate differences with exact character offsets
         errors = self._extract_errors_from_diff(original_text, corrected_text)
 
-        # Step 3: Compute category breakdowns
+        # Step 3: Compute coarse category and fine-grained type breakdowns
         category_counts = {
-            'spelling': sum(1 for e in errors if e['category'] == 'spelling'),
-            'grammar': sum(1 for e in errors if e['category'] == 'grammar'),
-            'punctuation': sum(1 for e in errors if e['category'] == 'punctuation'),
-            'style': sum(1 for e in errors if e['category'] == 'style'),
+            'spelling': sum(1 for e in errors if e.get('category') == 'spelling'),
+            'grammar': sum(1 for e in errors if e.get('category') == 'grammar'),
+            'punctuation': sum(1 for e in errors if e.get('category') == 'punctuation'),
+            'style': sum(1 for e in errors if e.get('category') == 'style'),
         }
+
+        # Fine-grained educational type breakdown
+        type_counts = {}
+        for e in errors:
+            etype = e.get('error_type', 'grammar')
+            type_counts[etype] = type_counts.get(etype, 0) + 1
 
         # Step 4: Summary feedback message
         if not errors:
@@ -100,9 +107,14 @@ class GrammarService:
             'errors': errors,
             'error_count': len(errors),
             'category_counts': category_counts,
+            'type_counts': type_counts,
             'message': message,
             'engine': engine_used
         }
+
+    def correct_text(self, text: str) -> Dict[str, Any]:
+        """Alias for check_text for cross-service compatibility."""
+        return self.check_text(text)
 
     def _correct_passage_with_t5(self, text: str) -> str:
         """
@@ -152,11 +164,59 @@ class GrammarService:
                 # Linguistic polish pass to resolve sequence-to-sequence blind spots (possessives, SVA)
                 corrected_sent = self._polish_sentence(corrected_sent)
 
+                # Linguistic Guard & Validation Filter:
+                # 1. Protect attributive nouns from invalid pluralization ('vowels sounds' -> 'vowel sounds')
+                # 2. Prevent over-correction hallucinations on already-correct sentences
+                # 3. Preserve minimal pair contrast nouns ('sheep and ship')
+                corrected_sent = self._validate_and_guard_sentence(sent_clean, corrected_sent)
+
                 corrected_sentences.append(corrected_sent)
 
             corrected_paragraphs.append(" ".join(corrected_sentences))
 
         return "\n".join(corrected_paragraphs)
+
+    def _validate_and_guard_sentence(self, original: str, candidate: str) -> str:
+        """
+        Linguistic Guard & Validation Filter:
+        1. Prevents T5 from unnecessarily mutating sentences that are already correct.
+        2. Fixes attributive noun hallucinations (e.g. 'vowels sounds' -> 'vowel sounds', 'words orders' -> 'word order').
+        3. Preserves minimal pairs and linguistic examples (e.g. 'sheep and ship').
+        4. Reverts gratuitous paraphrasing that adds no grammatical correction.
+        """
+        orig_clean = original.strip()
+        cand_clean = candidate.strip()
+
+        if not cand_clean or orig_clean.lower() == cand_clean.lower():
+            return cand_clean or orig_clean
+
+        # 1. Attributive noun guard: singular noun modifying a head noun in English is singular
+        # e.g., 'vowel sound(s)', 'consonant sound(s)', 'word order', 'grammar rule(s)'
+        fixed = cand_clean
+        attributive_replacements = [
+            (r'\b(vowel)s\s+(sounds?)\b', r'\1 \2'),
+            (r'\b(consonant)s\s+(sounds?)\b', r'\1 \2'),
+            (r'\b(word)s\s+(orders?)\b', r'\1 \2'),
+            (r'\b(grammar)s\s+(rules?|errors?|corrections?)\b', r'\1 \2'),
+            (r'\b(language)s\s+(learners?|acquisitions?|models?)\b', r'\1 \2'),
+            (r'\b(sound)s\s+(waves?|patterns?)\b', r'\1 \2'),
+            (r'\b(speech)es\s+(recognitions?|cadences?|trainings?)\b', r'\1 \2'),
+            (r'\b(test)s\s+(scores?|results?)\b', r'\1 \2'),
+            (r'\b(book)s\s+(stores?|shops?|titles?)\b', r'\1 \2'),
+            (r'\b(apple)s\s+(trees?)\b', r'\1 \2'),
+        ]
+        for pat, repl in attributive_replacements:
+            fixed = re.sub(pat, repl, fixed, flags=re.IGNORECASE)
+
+        # 2. Minimal pair / linguistic example contrast preservation: 'sheep and ship'
+        if re.search(r'\bsheep and ship\b', orig_clean, flags=re.IGNORECASE):
+            fixed = re.sub(r'\bsheep and ships\b', 'sheep and ship', fixed, flags=re.IGNORECASE)
+
+        # 3. If restoring invalid pluralization makes candidate match original, return original
+        if fixed.strip().lower() == orig_clean.lower():
+            return orig_clean
+
+        return fixed
 
     def _polish_sentence(self, sentence: str) -> str:
         """
@@ -211,6 +271,9 @@ class GrammarService:
 
         # Missing preposition in grade/standard: "studying 7th standard" -> "studying in 7th standard"
         s = re.sub(r'\bstudy(?:ing)?\s+(\d+(?:st|nd|rd|th))\s+standard\b', r'studying in the \1 standard', s, flags=re.IGNORECASE)
+
+        # Redundant preposition: "discuss about" -> "discuss", "discussed about" -> "discussed"
+        s = re.sub(r'\b(discuss(?:es|ed|ing)?)\s+about\b', r'\1', s, flags=re.IGNORECASE)
 
         # Preserve casing of first character
         if sentence and sentence[0].isupper() and s and s[0].islower():
@@ -311,9 +374,19 @@ class GrammarService:
                 replacement_text = re.sub(r"\s+'\s*([a-zA-Z]+)", r"'\1", replacement_text)
                 replacement_text = re.sub(r"^'\s*([a-zA-Z]+)", r"'\1", replacement_text)
 
-            # Categorize the change
-            category = self._categorize_difference(matched_text, replacement_text)
-            explanation = self._build_explanation(matched_text, replacement_text, category)
+            # Categorize the change using the intelligent classification service
+            classification = classification_service.classify_error(matched_text, replacement_text, original_text)
+            fine_grained_type = classification['category']
+
+            # Determine coarse category for backward-compatible progress metrics
+            if fine_grained_type in ('punctuation', 'capitalization'):
+                coarse_category = 'punctuation'
+            elif fine_grained_type == 'spelling':
+                coarse_category = 'spelling'
+            elif fine_grained_type == 'word_order':
+                coarse_category = 'style'
+            else:
+                coarse_category = 'grammar'
 
             errors.append({
                 'id': f"diff_{start_offset}",
@@ -321,9 +394,13 @@ class GrammarService:
                 'length': end_offset - start_offset,
                 'matched_text': matched_text,
                 'replacements': [replacement_text],
-                'category': category,
-                'message': explanation,
-                'rule': f"{category.upper()}_CORRECTION"
+                'category': coarse_category,
+                'error_type': fine_grained_type,
+                'type_label': fine_grained_type.replace('_', ' ').title(),
+                'message': classification['explanation'],
+                'confidence': classification['confidence'],
+                'requires_review': classification['requires_review'],
+                'rule': f"{fine_grained_type.upper()}_CORRECTION"
             })
 
         return errors

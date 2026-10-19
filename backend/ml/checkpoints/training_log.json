@@ -1,0 +1,21 @@
+{
+  "model_name": "t5-small",
+  "dataset_train_samples": 4,
+  "dataset_val_samples": 2,
+  "epochs": 1,
+  "batch_size": 4,
+  "learning_rate": 0.0003,
+  "elapsed_seconds": 0.54,
+  "device": "cpu",
+  "dry_run": true,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.4786,
+      "val_loss": 0.9169,
+      "learning_rate": 0.0003,
+      "timestamp": "2026-10-18 14:56:31"
+    }
+  ],
+  "completed_at": "2026-10-18 14:56:31"
+}

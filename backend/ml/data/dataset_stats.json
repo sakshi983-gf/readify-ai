@@ -1,0 +1,25 @@
+{
+  "total_examples": 67,
+  "train_count": 53,
+  "val_count": 6,
+  "test_count": 8,
+  "split_ratio": "80% train / 10% val / 10% test",
+  "average_input_length_words": 7.2,
+  "average_target_length_words": 7.3,
+  "error_type_distribution": {
+    "subject_verb_agreement": 12,
+    "verb_tense": 9,
+    "articles": 7,
+    "prepositions": 7,
+    "pronouns": 5,
+    "singular_plural": 5,
+    "word_order": 4,
+    "spelling": 5,
+    "capitalization": 2,
+    "punctuation": 3,
+    "sentence_structure": 3,
+    "already_correct": 5
+  },
+  "dataset_source": "JFLEG (JHU Fluency-Extended GUG) & Tatoeba Open GEC Corpus",
+  "license": "CC BY-NC-SA 4.0 (Educational and Non-Commercial Research Use)"
+}

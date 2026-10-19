@@ -12,7 +12,10 @@ import {
   Brain,
   FileCheck2,
   Award,
-  Layers
+  Layers,
+  Bot,
+  Volume2,
+  Palette
 } from 'lucide-react';
 import ScoreRing from '../components/ScoreRing';
 import { SAMPLE_PASSAGES } from '../constants/samplePassages';
@@ -20,32 +23,52 @@ import { SAMPLE_PASSAGES } from '../constants/samplePassages';
 export default function LandingPage({ onStartReading, onLoadSample, setActivePage }) {
   const features = [
     {
-      icon: CheckCircle2,
+      icon: Sparkles,
       color: '#4F46E5',
       bgColor: '#EEF2FF',
-      title: 'Smart Grammar Correction',
-      desc: 'Detects spelling errors, punctuation mistakes, subject-verb mismatches, and improper word choices with instant one-click fixes.'
+      title: 'Interactive Squiggly Editor',
+      desc: 'Grammarly-style wavy colored underlines highlighting errors with floating popover cards and 1-click accept fixes.',
+      pageId: 'workspace'
+    },
+    {
+      icon: Volume2,
+      color: '#059669',
+      bgColor: '#ECFDF5',
+      title: 'Listen & Speak Audio Coach',
+      desc: 'Text-to-speech audio playback with pitch/speed controls plus microphone speech-to-text pronunciation accuracy scoring.',
+      pageId: 'pronunciation'
+    },
+    {
+      icon: Bot,
+      color: '#7C3AED',
+      bgColor: '#F5F3FF',
+      title: 'Conversational AI English Tutor',
+      desc: 'Interactive AI tutor ready to explain grammar concepts, build vocabulary, and conduct realistic job interview roleplays.',
+      pageId: 'tutor'
+    },
+    {
+      icon: Palette,
+      color: '#D97706',
+      bgColor: '#FFFBEB',
+      title: 'Multi-Tone Writing Studio',
+      desc: 'Instantly transform any passage into Academic, Professional, Casual, or Concise styles with live word-delta metrics.',
+      pageId: 'workspace'
     },
     {
       icon: HelpCircle,
-      color: '#7C3AED',
-      bgColor: '#F5F3FF',
-      title: 'Reading Comprehension Quiz',
-      desc: 'Automatically generates 5 passage-based multiple choice questions evaluating main ideas, factual details, vocabulary, and inferences.'
+      color: '#2563EB',
+      bgColor: '#EFF6FF',
+      title: 'Comprehension Quizzes & Scoring',
+      desc: 'Auto-generates 5 passage-based multiple choice questions evaluating main ideas, factual details, vocabulary, and inferences.',
+      pageId: 'comprehension'
     },
     {
       icon: TrendingUp,
-      color: '#059669',
-      bgColor: '#ECFDF5',
-      title: 'Performance Scoring & Metrics',
-      desc: 'Calculates transparent grammar accuracy, comprehension percentage, and Flesch readability grade levels with documented formulas.'
-    },
-    {
-      icon: MessageSquareText,
-      color: '#D97706',
-      bgColor: '#FFFBEB',
-      title: 'Contextual Personalized Feedback',
-      desc: 'Provides meaningful, tailored guidance based on actual quiz answers and detected error categories to foster genuine reading mastery.'
+      color: '#DC2626',
+      bgColor: '#FEF2F2',
+      title: 'Personalized Adaptive Coach',
+      desc: 'Tracks weaknesses across verb tenses, articles, and agreement to recommend targeted practice exercises.',
+      pageId: 'coach'
     }
   ];
 
@@ -392,9 +415,16 @@ export default function LandingPage({ onStartReading, onLoadSample, setActivePag
               <div 
                 key={index}
                 className="card card-interactive"
+                onClick={() => {
+                  if (feat.pageId) {
+                    setActivePage(feat.pageId);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }}
                 style={{
                   padding: '30px 24px',
                   borderRadius: 'var(--radius-lg)',
+                  cursor: feat.pageId ? 'pointer' : 'default',
                 }}
               >
                 <div style={{

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "gec_0028",
+    "input": "It was an unique opportunity for all of us.",
+    "target": "It was a unique opportunity for all of us.",
+    "type": "articles"
+  },
+  {
+    "id": "gec_0038",
+    "input": "Her and me went to the library together.",
+    "target": "She and I went to the library together.",
+    "type": "pronouns"
+  },
+  {
+    "id": "gec_0006",
+    "input": "They is playing cricket in the garden.",
+    "target": "They are playing cricket in the garden.",
+    "type": "subject_verb_agreement"
+  },
+  {
+    "id": "gec_0035",
+    "input": "We will meet in Monday morning.",
+    "target": "We will meet on Monday morning.",
+    "type": "prepositions"
+  },
+  {
+    "id": "gec_0061",
+    "input": "Despite of being poor, he was always honest.",
+    "target": "Despite being poor, he was always honest.",
+    "type": "sentence_structure"
+  },
+  {
+    "id": "gec_0044",
+    "input": "The informations provided were inaccurate.",
+    "target": "The information provided was inaccurate.",
+    "type": "singular_plural"
+  }
+]

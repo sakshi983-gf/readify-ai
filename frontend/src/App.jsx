@@ -1,19 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import AIConfigModal from './components/AIConfigModal';
+import AuthModal from './components/AuthModal';
 import LandingPage from './pages/LandingPage';
 import WorkspacePage from './pages/WorkspacePage';
 import DashboardPage from './pages/DashboardPage';
 import HistoryPage from './pages/HistoryPage';
+import PracticePage from './pages/PracticePage';
+import ComprehensionPage from './pages/ComprehensionPage';
+import CoachPage from './pages/CoachPage';
+import ModelInfoPage from './pages/ModelInfoPage';
+import TutorPage from './pages/TutorPage';
+import PronunciationPage from './pages/PronunciationPage';
+import AIAssistantDrawer from './components/AIAssistantDrawer';
 import api from './services/api';
 
 export default function App() {
-  // Navigation: 'landing' | 'workspace' | 'dashboard' | 'history'
+  // Navigation: 'landing' | 'workspace' | 'tutor' | 'pronunciation' | 'practice' | 'comprehension' | 'coach' | 'dashboard' | 'history' | 'model-info'
   const [activePage, setActivePage] = useState('landing');
   
-  // AI Config Modal state
+  // Modals state
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Authenticated user state
+  const [user, setUser] = useState(null);
+
+  // Check existing session on load
+  useEffect(() => {
+    const token = localStorage.getItem('readify_token');
+    if (token) {
+      api.getMe()
+        .then((res) => {
+          if (res.success && res.data) {
+            setUser(res.data);
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('readify_token');
+          setUser(null);
+        });
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch (e) {
+      // ignore
+    }
+    localStorage.removeItem('readify_token');
+    setUser(null);
+  };
 
   // Workspace state shared between pages
   const [workspacePassage, setWorkspacePassage] = useState('');
@@ -96,17 +135,30 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-main)' }}>
-      {/* Universal Sticky Glassmorphism Header */}
+      {/* Universal Sticky Header */}
       <Navbar 
         activePage={activePage} 
         setActivePage={setActivePage} 
         onOpenAIConfig={() => setIsAIModalOpen(true)}
+        user={user}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* AI Configuration Modal */}
       <AIConfigModal 
         isOpen={isAIModalOpen} 
         onClose={() => setIsAIModalOpen(false)} 
+      />
+
+      {/* Authentication Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={(userData) => {
+          setUser(userData);
+          setIsAuthModalOpen(false);
+        }}
       />
 
       {/* Main Content Layout */}
@@ -120,7 +172,7 @@ export default function App() {
         </main>
       ) : (
         <div style={{ display: 'flex', flex: 1, minHeight: 'calc(100vh - 70px)' }}>
-          {/* SaaS Sidebar for Workspace, Dashboard, and History */}
+          {/* SaaS Sidebar for Workspace, Practice, Reading, Coach, Dashboard, History, Model */}
           <Sidebar 
             activePage={activePage} 
             setActivePage={setActivePage} 
@@ -140,6 +192,27 @@ export default function App() {
               />
             )}
 
+            {activePage === 'practice' && (
+              <PracticePage 
+                setActivePage={setActivePage}
+                user={user}
+              />
+            )}
+
+            {activePage === 'comprehension' && (
+              <ComprehensionPage 
+                setActivePage={setActivePage}
+                user={user}
+              />
+            )}
+
+            {activePage === 'coach' && (
+              <CoachPage 
+                setActivePage={setActivePage}
+                user={user}
+              />
+            )}
+
             {activePage === 'dashboard' && (
               <DashboardPage 
                 setActivePage={setActivePage}
@@ -153,9 +226,31 @@ export default function App() {
                 onSelectHistoryItem={handleSelectHistoryItem}
               />
             )}
+
+            {activePage === 'tutor' && (
+              <TutorPage 
+                user={user}
+              />
+            )}
+
+            {activePage === 'pronunciation' && (
+              <PronunciationPage 
+                setActivePage={setActivePage}
+                user={user}
+              />
+            )}
+
+            {activePage === 'model-info' && (
+              <ModelInfoPage 
+                setActivePage={setActivePage}
+              />
+            )}
           </main>
         </div>
       )}
+
+      {/* Global Floating AI Tutor Drawer (accessible on any page) */}
+      <AIAssistantDrawer activePassage={workspacePassage} />
     </div>
   );
 }

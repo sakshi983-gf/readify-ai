@@ -1,0 +1,115 @@
+{
+  "model_name": "Readify Enhanced Hybrid T5 (Production)",
+  "dataset_name": "JFLEG & Tatoeba Held-Out Test Split",
+  "test_samples_count": 8,
+  "exact_match_accuracy": 62.5,
+  "gleu_score": 82.8,
+  "bleu_score": 81.1,
+  "precision": 75.0,
+  "recall": 75.0,
+  "f1_score": 75.0,
+  "known_failures_count": 3,
+  "known_failure_examples": [
+    {
+      "source": "I like very much reading English novels.",
+      "target": "I like reading English novels very much.",
+      "model_output": "I like very much reading English novels.",
+      "type": "word_order"
+    },
+    {
+      "source": "I congratulated him for his success.",
+      "target": "I congratulated him on his success.",
+      "model_output": "I congratulated him for his success.",
+      "type": "prepositions"
+    },
+    {
+      "source": "Yesterday he walk to the store and bought milk.",
+      "target": "Yesterday he walked to the store and bought milk.",
+      "model_output": "Yesterday he went to the store and bought milk.",
+      "type": "verb_tense"
+    }
+  ],
+  "evaluated_at": "2026-10-18T14:40:00Z",
+  "details": [
+    {
+      "id": "gec_0007",
+      "source": "He do not like apples.",
+      "target": "He does not like apples.",
+      "hypothesis": "He does not like apples.",
+      "exact_match": true,
+      "gleu": 100.0,
+      "f1": 100.0,
+      "type": "subject_verb_agreement"
+    },
+    {
+      "id": "gec_0048",
+      "source": "I like very much reading English novels.",
+      "target": "I like reading English novels very much.",
+      "hypothesis": "I like very much reading English novels.",
+      "exact_match": false,
+      "gleu": 43.45,
+      "f1": 100.0,
+      "type": "word_order"
+    },
+    {
+      "id": "gec_0009",
+      "source": "There is many books on the table.",
+      "target": "There are many books on the table.",
+      "hypothesis": "There are many books on the table.",
+      "exact_match": true,
+      "gleu": 100.0,
+      "f1": 100.0,
+      "type": "subject_verb_agreement"
+    },
+    {
+      "id": "gec_0067",
+      "source": "They have been studying for three hours.",
+      "target": "They have been studying for three hours.",
+      "hypothesis": "They have been studying for three hours.",
+      "exact_match": true,
+      "gleu": 100.0,
+      "f1": 100.0,
+      "type": "already_correct"
+    },
+    {
+      "id": "gec_0032",
+      "source": "I congratulated him for his success.",
+      "target": "I congratulated him on his success.",
+      "hypothesis": "I congratulated him for his success.",
+      "exact_match": false,
+      "gleu": 48.1,
+      "f1": 0.0,
+      "type": "prepositions"
+    },
+    {
+      "id": "gec_0036",
+      "source": "Yesterday i visited my friend.",
+      "target": "Yesterday I visited my friend.",
+      "hypothesis": "Yesterday I visited my friend.",
+      "exact_match": true,
+      "gleu": 100.0,
+      "f1": 100.0,
+      "type": "pronouns"
+    },
+    {
+      "id": "gec_0004",
+      "source": "Sometimes, we plays games after school.",
+      "target": "Sometimes, we play games after school.",
+      "hypothesis": "Sometimes, we play games after school.",
+      "exact_match": true,
+      "gleu": 100.0,
+      "f1": 100.0,
+      "type": "subject_verb_agreement"
+    },
+    {
+      "id": "gec_0015",
+      "source": "Yesterday he walk to the store and bought milk.",
+      "target": "Yesterday he walked to the store and bought milk.",
+      "hypothesis": "Yesterday he went to the store and bought milk.",
+      "exact_match": false,
+      "gleu": 70.71,
+      "f1": 0.0,
+      "type": "verb_tense"
+    }
+  ]
+}

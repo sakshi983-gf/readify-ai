@@ -10,7 +10,11 @@ import {
   CheckCircle2, 
   RefreshCw,
   TrendingUp,
-  Inbox
+  Inbox,
+  Target,
+  BrainCircuit,
+  Compass,
+  AlertCircle
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -25,6 +29,7 @@ import api from '../services/api';
 
 export default function DashboardPage({ setActivePage, onSelectHistoryItem }) {
   const [stats, setStats] = useState(null);
+  const [coachData, setCoachData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -32,9 +37,16 @@ export default function DashboardPage({ setActivePage, onSelectHistoryItem }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getDashboard();
-      if (res.success && res.data) {
-        setStats(res.data);
+      const [dashRes, coachRes] = await Promise.all([
+        api.getDashboard().catch(() => ({ success: false })),
+        api.getCoachDiagnostic().catch(() => ({ success: false })),
+      ]);
+
+      if (dashRes.success && dashRes.data) {
+        setStats(dashRes.data);
+      }
+      if (coachRes.success && coachRes.data) {
+        setCoachData(coachRes.data);
       }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
@@ -234,6 +246,158 @@ export default function DashboardPage({ setActivePage, onSelectHistoryItem }) {
           </p>
         </div>
       </div>
+
+      {/* AI Learning Coach Adaptive Recommendations (Module 5 & 7) */}
+      {coachData && (
+        <div className="card" style={{
+          padding: '26px',
+          marginBottom: '32px',
+          background: 'linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%)',
+          border: '1px solid #E9D5FF',
+        }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--primary)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)',
+              }}>
+                <BrainCircuit size={22} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                    Personalized AI Learning Coach
+                  </h3>
+                  <span className="badge badge-primary">
+                    Mastery: {coachData.overall_mastery || 70}%
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+                  Continuous diagnostic of grammar error patterns and targeted exercises to accelerate fluency.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setActivePage('coach')}
+                className="btn btn-secondary btn-sm"
+              >
+                <Compass size={14} />
+                <span>Full Diagnostic</span>
+              </button>
+              <button
+                onClick={() => setActivePage('practice')}
+                className="btn btn-primary btn-sm"
+              >
+                <Target size={14} />
+                <span>Start Practice</span>
+              </button>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '16px',
+          }}>
+            {/* Weak Areas Card */}
+            <div style={{ padding: '16px', borderRadius: '10px', backgroundColor: 'white', border: '1px solid #F3E8FF' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <AlertCircle size={16} style={{ color: '#D97706' }} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Detected Weak Areas
+                </span>
+              </div>
+              {coachData.weak_categories && coachData.weak_categories.length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {coachData.weak_categories.map((cat, idx) => (
+                    <span 
+                      key={idx}
+                      onClick={() => setActivePage('practice')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: '#FEF3C7',
+                        color: '#92400E',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                      title="Click to practice this category"
+                    >
+                      {cat.label || cat.category}: {cat.accuracy || 0}%
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.82rem', color: '#059669', fontWeight: 600 }}>
+                  Excellent! No critical grammar weakness detected across your recent exercises.
+                </p>
+              )}
+            </div>
+
+            {/* Recommended Action */}
+            <div style={{ padding: '16px', borderRadius: '10px', backgroundColor: 'white', border: '1px solid #F3E8FF' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <Target size={16} style={{ color: 'var(--primary)' }} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Next Recommended Action
+                </span>
+              </div>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '8px' }}>
+                {coachData.priority_actions?.[0] || 'Complete 5 targeted practice drills to sharpen subject-verb agreement.'}
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setActivePage('practice')}
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: 'var(--primary)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: 0
+                  }}
+                >
+                  <span>Practice Drills</span>
+                  <ArrowRight size={13} />
+                </button>
+                <span style={{ color: '#CBD5E1' }}>|</span>
+                <button
+                  onClick={() => setActivePage('comprehension')}
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#059669',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: 0
+                  }}
+                >
+                  <span>Read Passages</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Score Trend Chart Section */}
       <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>

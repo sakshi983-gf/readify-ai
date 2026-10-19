@@ -8,14 +8,26 @@ import {
   CheckCircle2, 
   HelpCircle,
   FileText,
-  Activity
+  Activity,
+  Target,
+  BookOpen,
+  BrainCircuit,
+  Cpu,
+  Bot,
+  Headphones
 } from 'lucide-react';
 
 export default function Sidebar({ activePage, setActivePage, onStartNew, onOpenAIConfig }) {
   const menuItems = [
-    { id: 'workspace', label: 'Reading Workspace', icon: PenTool, badge: 'Active' },
+    { id: 'workspace', label: 'Reading Workspace', icon: PenTool },
+    { id: 'tutor', label: 'AI English Tutor', icon: Bot, badge: 'AI' },
+    { id: 'pronunciation', label: 'Audio & Speech Coach', icon: Headphones, badge: 'NEW' },
+    { id: 'practice', label: 'Grammar Drills', icon: Target },
+    { id: 'comprehension', label: 'Passage Quizzes', icon: BookOpen },
+    { id: 'coach', label: 'AI Learning Coach', icon: BrainCircuit },
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'history', label: 'Reading History', icon: History },
+    { id: 'model-info', label: 'AI Model & Benchmarks', icon: Cpu },
     { id: 'landing', label: 'Back to Home', icon: Home },
   ];
 
